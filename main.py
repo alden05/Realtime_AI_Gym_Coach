@@ -3,6 +3,7 @@ from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import os
 import time
 import pandas as pd
+
 from services.auth.login_wall import render_login_wall
 from services.state.session_defaults import initial_session_defaults
 from services.config.workout_config import EXERCISE_OPTIONS
@@ -21,7 +22,7 @@ def main():
     st.set_page_config(
         page_title="AI Real-time Gym Coach",
         initial_sidebar_state="expanded",
-        layout="centered"
+        layout="wide"
     )
 
     theme()
@@ -32,7 +33,7 @@ def main():
         return
     
     initial_session_defaults()
-
+    
     if "voice_pipeline" not in st.session_state:
         try:
             api_key = os.environ.get("GROQ_API_KEY", "")
@@ -46,12 +47,12 @@ def main():
             st.session_state.voice_pipeline = VoicePipeline(llm_coach, tts)
         except Exception as e:
             st.session_state.voice_pipeline = None
-    
+            st.error(f"Voice pipeline failed: {e}")
 
     workout_started = st.session_state.get("workout_started", False)
     
     with st.sidebar:
-        st.title("🏋️‍♂️ Apna AI Coach")
+        st.title("🏋️‍♂️ AI Gym Coach")
 
         if st.session_state.username:
             st.caption(f"👤 Login as {st.session_state.username}")
@@ -166,35 +167,46 @@ def main():
                 st.metric("Balance Status", st.session_state.balance_status)
 
 
-    st.title("AI Real-time GYM Coach")
-    st.markdown("#### Real-time pose detection with proactive AI voice coaching")
+    st.markdown("""
+        <div class="hero">
+
+        <h1>🏋️ CoachFit AI</h1>
+
+        <p>
+        Real-time pose tracking • AI voice feedback • Smart workout analytics
+        </p>
+
+        </div>
+        """, unsafe_allow_html=True)
+
+
     if st.session_state.get("audio_to_play"):
         autoplay_audio(st.session_state.audio_to_play)
 
     if st.session_state.get("coach_feedback"):
         st.markdown("")
         st.success(f"🤖 **Coach:** {st.session_state.coach_feedback}")
+
     if not workout_started:
         st.markdown(
             """
-            <div style="
-                border: 4px dashed #444;
-                border-radius: 0px;
-                padding: 48px 32px;
-                text-align: center;
-                color: #888;
-                margin-top: 32px;
-                margin-bottom: 32px;
-            ">
-                <h2 style="color:#ccc; margin-bottom:8px;">👈 Set your workout plan</h2>
-                <p style="font-size:1.05rem;">
-                    Choose your exercise, sets and reps in the sidebar,<br>
-                    then click <strong>Start Workout</strong> to activate the camera and AI coach.
+            <div class="empty-card">
+                <h2>
+                    Ready for your workout?
+                </h2>
+                <p>
+                    Choose an exercise plan from the sidebar.<br>
+                    Your AI coach will track your form, count reps,<br>
+                    and provide real-time voice feedback.
                 </p>
+                <div class="empty-tip">
+                    👈 Select exercise → Set goals → Start training
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
+
     else:
         context = webrtc_streamer(
             key="exercise-analysis",
